@@ -4,11 +4,11 @@ A **production-ready** Model Context Protocol (MCP) server built with FastAPI th
 
 ## 🌐 Azure Deployment
 
-- **Azure URL**: https://`APP-SERVICE-NAME`.azurewebsites.net/
-- **API Documentation**: https://`APP-SERVICE-NAME`.azurewebsites.net/docs
-- **Health Check**: https://`APP-SERVICE-NAME`.azurewebsites.net/health
-- **MCP Endpoint**: https://`APP-SERVICE-NAME`.azurewebsites.net/mcp/stream
-- **Tools Endpoint**: https://`APP-SERVICE-NAME`.azurewebsites.net/tools/call
+- **Azure URL**: https://`<APP-SERVICE-NAME>`.azurewebsites.net/
+- **API Documentation**: https://`<APP-SERVICE-NAME>`.azurewebsites.net/docs
+- **Health Check**: https://`<APP-SERVICE-NAME>`.azurewebsites.net/health
+- **MCP Endpoint**: https://`<APP-SERVICE-NAME>`.azurewebsites.net/mcp/stream
+- **Tools Endpoint**: https://`<APP-SERVICE-NAME>`.azurewebsites.net/tools/call
 - **Interactive Test Interface**: [test_azure_web.html](./test_azure_web.html)
 
 ### 🧪 Live Testing Examples
@@ -17,19 +17,19 @@ You can test the authenticated weather tools:
 
 ```bash
 # Test weather alerts for California (using full access key)
-curl -X POST "https://`APP-SERVICE-NAME`.azurewebsites.net/tools/call" \
+curl -X POST "https://`<APP-SERVICE-NAME>`.azurewebsites.net/tools/call" \
   -H "Authorization: mcp-client-key-123" \
   -H "Content-Type: application/json" \
   -d '{"method": "tools/call", "params": {"name": "get_alerts", "arguments": {"state": "CA"}}}'
 
 # Test weather forecast for San Francisco  
-curl -X POST "https://`APP-SERVICE-NAME`.azurewebsites.net/tools/call" \
+curl -X POST "https://`<APP-SERVICE-NAME>`.azurewebsites.net/tools/call" \
   -H "Authorization: mcp-client-key-123" \
   -H "Content-Type: application/json" \
   -d '{"method": "tools/call", "params": {"name": "get_forecast", "arguments": {"latitude": 37.7749, "longitude": -122.4194}}}'
 
 # Test authentication (should return 401)
-curl -X GET "https://`APP-SERVICE-NAME`.azurewebsites.net/tools" \
+curl -X GET "https://`<APP-SERVICE-NAME>`.azurewebsites.net/tools" \
   -H "Authorization: invalid-key"
 ```
 
@@ -183,7 +183,7 @@ Connect directly to the live Azure deployment:
 
 ### Method 3: Web Test Interface
 
-Visit http://localhost:8000/test (local) or https://`APP-SERVICE-NAME`.azurewebsites.net/test (Azure) to use the built-in web interface for testing HTTP connectivity.
+Visit http://localhost:8000/test (local) or https://`<APP-SERVICE-NAME>`.azurewebsites.net/test (Azure) to use the built-in web interface for testing HTTP connectivity.
 
 ## API Endpoints
 
