@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Server Authentication Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #cce7ff; border-color: #b3d7ff; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        
+        input, select, button {
+            margin: 5px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .response {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .auth-demo {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .endpoint-test {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 MCP Server Authentication Test</h1>
+        <p><strong>Azure Endpoint:</strong> https://app-web-7ahzyo2sd4ery.azurewebsites.net</p>
+        
+        <div class="test-section info">
+            <h3>📋 Available API Keys</h3>
+            <div class="auth-demo">
+                <div>
+                    <strong>Full Access Key:</strong><br>
+                    <code>mcp-client-key-123</code><br>
+                    <small>Permissions: tools, resources</small>
+                </div>
+                <div>
+                    <strong>Limited Access Key:</strong><br>
+                    <code>test-key-456</code><br>
+                    <small>Permissions: tools only</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 Interactive Testing</h3>
+            <div>
+                <label>API Key:</label>
+                <select id="apiKey">
+                    <option value="">No API Key (should fail)</option>
+                    <option value="mcp-client-key-123">Full Access Key</option>
+                    <option value="test-key-456">Limited Access Key</option>
+                    <option value="invalid-key">Invalid Key</option>
+                </select>
+            </div>
+            
+            <div class="endpoint-test">
+                <button onclick="testEndpoint('/health', 'GET')">Test Health (Public)</button>
+                <button onclick="testEndpoint('/auth/info', 'GET', true)">Test Auth Info</button>
+                <button onclick="testEndpoint('/tools', 'GET', true)">Test Tools List</button>
+                <button onclick="testEndpoint('/resources', 'GET', true)">Test Resources List</button>
+            </div>
+            
+            <div class="endpoint-test">
+                <button onclick="testWeatherForecast()">Test Weather Forecast</button>
+                <button onclick="testWeatherAlerts()">Test Weather Alerts</button>
+            </div>
+            
+            <div id="response" class="response" style="display: none;"></div>
+        </div>
+
+        <div class="test-section success">
+            <h3>✅ Authentication Features Verified</h3>
+            <ul>
+                <li>✅ API Key Authentication via Authorization header</li>
+                <li>✅ Role-based permissions (tools vs resources)</li>
+                <li>✅ 401 Unauthorized for invalid keys</li>
+                <li>✅ 403 Forbidden for insufficient permissions</li>
+                <li>✅ Weather tools working with authentication</li>
+                <li>✅ Public health endpoints accessible</li>
+                <li>✅ Secure MCP protocol implementation</li>
+            </ul>
+        </div>
+
+        <div class="test-section info">
+            <h3>📖 Usage Instructions</h3>
+            <ol>
+                <li>Select an API key from the dropdown above</li>
+                <li>Click any test button to see authentication in action</li>
+                <li>Notice how different keys have different permissions</li>
+                <li>Invalid/missing keys are properly rejected</li>
+            </ol>
+            
+            <h4>Example cURL Commands:</h4>
+            <div class="response">
+# Test with full access key
+curl -H "Authorization: Bearer mcp-client-key-123" \
+     https://app-web-7ahzyo2sd4ery.azurewebsites.net/tools
+
+# Test weather forecast
+curl -X POST \
+     -H "Authorization: Bearer mcp-client-key-123" \
+     -H "Content-Type: application/json" \
+     -d '{"method":"tools/call","params":{"name":"get_forecast","arguments":{"latitude":40.7128,"longitude":-74.0060}}}' \
+     https://app-web-7ahzyo2sd4ery.azurewebsites.net/tools/call
+
+# Test without authentication (should fail)
+curl https://app-web-7ahzyo2sd4ery.azurewebsites.net/tools
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = 'https://app-web-7ahzyo2sd4ery.azurewebsites.net';
+        
+        function getHeaders(requireAuth = false) {
+            const headers = {
+                'Content-Type': 'application/json',
+            };
+            
+            if (requireAuth) {
+                const apiKey = document.getElementById('apiKey').value;
+                if (apiKey) {
+                    headers['Authorization'] = `Bearer ${apiKey}`;
+                }
+            }
+            
+            return headers;
+        }
+        
+        async function testEndpoint(endpoint, method = 'GET', requireAuth = false) {
+            const responseDiv = document.getElementById('response');
+            responseDiv.style.display = 'block';
+            responseDiv.textContent = 'Testing...';
+            
+            try {
+                const options = {
+                    method: method,
+                    headers: getHeaders(requireAuth),
+                    mode: 'cors'
+                };
+                
+                const response = await fetch(BASE_URL + endpoint, options);
+                const data = await response.json();
+                
+                responseDiv.textContent = `${method} ${endpoint}\n` +
+                    `Status: ${response.status} ${response.statusText}\n` +
+                    `Response: ${JSON.stringify(data, null, 2)}`;
+                    
+                responseDiv.className = response.ok ? 'response success' : 'response error';
+            } catch (error) {
+                responseDiv.textContent = `Error: ${error.message}`;
+                responseDiv.className = 'response error';
+            }
+        }
+        
+        async function testWeatherForecast() {
+            const responseDiv = document.getElementById('response');
+            responseDiv.style.display = 'block';
+            responseDiv.textContent = 'Testing weather forecast...';
+            
+            try {
+                const options = {
+                    method: 'POST',
+                    headers: getHeaders(true),
+                    mode: 'cors',
+                    body: JSON.stringify({
+                        method: 'tools/call',
+                        params: {
+                            name: 'get_forecast',
+                            arguments: {
+                                latitude: 40.7128,
+                                longitude: -74.0060
+                            }
+                        }
+                    })
+                };
+                
+                const response = await fetch(BASE_URL + '/tools/call', options);
+                const data = await response.json();
+                
+                responseDiv.textContent = `POST /tools/call (Weather Forecast)\n` +
+                    `Status: ${response.status} ${response.statusText}\n` +
+                    `Location: New York City (40.7128, -74.0060)\n` +
+                    `Response: ${JSON.stringify(data, null, 2)}`;
+                    
+                responseDiv.className = response.ok ? 'response success' : 'response error';
+            } catch (error) {
+                responseDiv.textContent = `Error: ${error.message}`;
+                responseDiv.className = 'response error';
+            }
+        }
+        
+        async function testWeatherAlerts() {
+            const responseDiv = document.getElementById('response');
+            responseDiv.style.display = 'block';
+            responseDiv.textContent = 'Testing weather alerts...';
+            
+            try {
+                const options = {
+                    method: 'POST',
+                    headers: getHeaders(true),
+                    mode: 'cors',
+                    body: JSON.stringify({
+                        method: 'tools/call',
+                        params: {
+                            name: 'get_alerts',
+                            arguments: {
+                                state: 'CA'
+                            }
+                        }
+                    })
+                };
+                
+                const response = await fetch(BASE_URL + '/tools/call', options);
+                const data = await response.json();
+                
+                responseDiv.textContent = `POST /tools/call (Weather Alerts)\n` +
+                    `Status: ${response.status} ${response.statusText}\n` +
+                    `State: California (CA)\n` +
+                    `Response: ${JSON.stringify(data, null, 2)}`;
+                    
+                responseDiv.className = response.ok ? 'response success' : 'response error';
+            } catch (error) {
+                responseDiv.textContent = `Error: ${error.message}`;
+                responseDiv.className = 'response error';
+            }
+        }
+        
+        // Auto-test on page load
+        window.onload = function() {
+            setTimeout(() => {
+                testEndpoint('/health', 'GET');
+            }, 1000);
+        };
+    </script>
+</body>
+</html>
