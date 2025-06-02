@@ -1,12 +1,15 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Annotated
 import logging
 import asyncio
 from contextlib import asynccontextmanager
 import httpx
+import os
+from datetime import datetime
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -15,6 +18,34 @@ logger = logging.getLogger(__name__)
 # Weather API Constants
 NWS_API_BASE = "https://api.weather.gov"
 USER_AGENT = "weather-app/1.0"
+
+# Authentication Configuration
+# In production, store these in environment variables or a secure config
+VALID_API_KEYS = {
+    "mcp-client-key-123": {
+        "name": "MCP Client",
+        "permissions": ["tools", "resources"],
+        "created": "2024-01-01"
+    },
+    "test-key-456": {
+        "name": "Test Client", 
+        "permissions": ["tools"],
+        "created": "2024-01-01"
+    }
+}
+
+# You can also load from environment variable
+if os.getenv("MCP_API_KEYS"):
+    # Format: "key1:name1,key2:name2"
+    env_keys = os.getenv("MCP_API_KEYS").split(",")
+    for key_pair in env_keys:
+        if ":" in key_pair:
+            key, name = key_pair.split(":", 1)
+            VALID_API_KEYS[key.strip()] = {
+                "name": name.strip(),
+                "permissions": ["tools", "resources"],
+                "created": datetime.now().isoformat()
+            }
 
 # Pydantic Models
 class Tool(BaseModel):
@@ -27,6 +58,61 @@ class Resource(BaseModel):
     name: str
     description: Optional[str] = None
     mimeType: Optional[str] = None
+
+class AuthInfo(BaseModel):
+    key: str
+    client_name: str
+    permissions: list[str]
+
+# Authentication Functions
+security = HTTPBearer()
+
+async def get_api_key_from_header(authorization: Annotated[str | None, Header()] = None) -> str:
+    """Extract API key from Authorization header."""
+    if not authorization:
+        raise HTTPException(
+            status_code=401,
+            detail="Authorization header is required",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    
+    # Support both "Bearer <key>" and just "<key>" formats
+    if authorization.startswith("Bearer "):
+        api_key = authorization[7:]  # Remove "Bearer " prefix
+    else:
+        api_key = authorization
+    
+    return api_key
+
+async def authenticate_request(api_key: str = Depends(get_api_key_from_header)) -> AuthInfo:
+    """Validate API key and return authentication info."""
+    if api_key not in VALID_API_KEYS:
+        logger.warning(f"Invalid API key attempted: {api_key[:8]}...")
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid API key",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    
+    client_info = VALID_API_KEYS[api_key]
+    logger.info(f"Authenticated client: {client_info['name']}")
+    
+    return AuthInfo(
+        key=api_key,
+        client_name=client_info["name"],
+        permissions=client_info["permissions"]
+    )
+
+def require_permission(permission: str):
+    """Dependency factory to require specific permissions."""
+    async def check_permission(auth: AuthInfo = Depends(authenticate_request)) -> AuthInfo:
+        if permission not in auth.permissions:
+            raise HTTPException(
+                status_code=403,
+                detail=f"Permission '{permission}' required"
+            )
+        return auth
+    return check_permission
 
 # Weather API Helper Functions
 async def make_nws_request(url: str) -> Optional[Dict[str, Any]]:
@@ -99,8 +185,7 @@ class MCPServer:
                     }
                 },
                 "required": ["latitude", "longitude"]
-            }
-        )
+            }        )
         self.tools["get_forecast"] = forecast_tool
     
     def initialize_resources(self):
@@ -128,7 +213,7 @@ class MCPServer:
                 }
             },
             "serverInfo": {
-                "name": "FastAPI MCP Server",
+                "name": "FastAPI MCP Server with Auth",
                 "version": "1.0.0"
             }
         }
@@ -298,14 +383,15 @@ mcp_server = MCPServer()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Starting MCP FastAPI Server")
+    logger.info("Starting MCP FastAPI Server with Authentication")
+    logger.info(f"Loaded {len(VALID_API_KEYS)} API keys")
     yield
     logger.info("Shutting down MCP FastAPI Server")
 
 # Create FastAPI app
 app = FastAPI(
-    title="MCP FastAPI Server",
-    description="Model Context Protocol server implementation using FastAPI with weather tools",
+    title="MCP FastAPI Server with Authentication",
+    description="Model Context Protocol server implementation using FastAPI with weather tools and API key authentication",
     version="1.0.0",
     lifespan=lifespan
 )
@@ -322,113 +408,31 @@ app.add_middleware(
 @app.get("/")
 async def root():
     """Health check endpoint"""
-    return {"message": "MCP FastAPI Server is running", "status": "healthy"}
+    return {"message": "MCP FastAPI Server with Authentication is running", "status": "healthy"}
+
+@app.get("/auth/info")
+async def auth_info(auth: AuthInfo = Depends(authenticate_request)):
+    """Get information about the authenticated client"""
+    return {
+        "client_name": auth.client_name,
+        "permissions": auth.permissions,
+        "authenticated": True
+    }
 
 @app.get("/tools")
-async def list_tools():
-    """REST endpoint to list available tools"""
+async def list_tools(auth: AuthInfo = Depends(require_permission("tools"))):
+    """REST endpoint to list available tools (requires authentication)"""
     return {"tools": [tool.dict() for tool in mcp_server.tools.values()]}
 
 @app.get("/resources")
-async def list_resources():
-    """REST endpoint to list available resources"""
+async def list_resources(auth: AuthInfo = Depends(require_permission("resources"))):
+    """REST endpoint to list available resources (requires authentication)"""
     return {"resources": [resource.dict() for resource in mcp_server.resources.values()]}
 
 @app.get("/test")
 async def serve_test_page():
-    """Serve the HTTP test page"""
+    """Serve the HTTP test page (public endpoint)"""
     return FileResponse("test_http_web.html")
-
-# MCP Streamable HTTP Endpoints
-@app.get("/mcp/stream")
-async def mcp_stream_info():
-    """Information about the MCP stream endpoint"""
-    return {
-        "info": "MCP Streamable HTTP Transport Endpoint",
-        "description": "This endpoint accepts POST requests with JSON-RPC 2.0 messages for MCP communication",
-        "usage": "Use MCP Inspector or send POST requests with proper JSON-RPC payloads",
-        "methods": ["POST"],
-        "example_request": {
-            "jsonrpc": "2.0",
-            "id": 1,
-            "method": "initialize",
-            "params": {
-                "protocolVersion": "2024-11-05",
-                "capabilities": {},
-                "clientInfo": {
-                    "name": "test-client",
-                    "version": "1.0.0"
-                }
-            }
-        }
-    }
-
-@app.post("/mcp/stream")
-async def mcp_stream_endpoint(request: Request):
-    """Main MCP endpoint with streamable HTTP support"""
-    try:
-        message = await request.json()
-        logger.info(f"Received MCP message: {message}")
-        
-        method = message.get("method")
-        params = message.get("params", {})
-        msg_id = message.get("id")
-        
-        if method == "initialize":
-            result = await mcp_server.handle_initialize(params)
-            return {
-                "jsonrpc": "2.0",
-                "id": msg_id,
-                "result": result
-            }
-        elif method == "tools/list":
-            result = await mcp_server.handle_tools_list(params)
-            return {
-                "jsonrpc": "2.0",
-                "id": msg_id,
-                "result": result
-            }
-        elif method == "tools/call":
-            result = await mcp_server.handle_tools_call(params)
-            return {
-                "jsonrpc": "2.0",
-                "id": msg_id,
-                "result": result
-            }
-        elif method == "resources/list":
-            result = await mcp_server.handle_resources_list(params)
-            return {
-                "jsonrpc": "2.0",
-                "id": msg_id,
-                "result": result
-            }
-        elif method == "resources/read":
-            result = await mcp_server.handle_resources_read(params)
-            return {
-                "jsonrpc": "2.0",
-                "id": msg_id,
-                "result": result
-            }
-        else:
-            return {
-                "jsonrpc": "2.0",
-                "id": msg_id,
-                "error": {
-                    "code": -32601,
-                    "message": f"Method '{method}' not found"
-                }
-            }
-        
-    except Exception as e:
-        logger.error(f"MCP stream error: {e}")
-        return {
-            "jsonrpc": "2.0",
-            "id": message.get("id") if 'message' in locals() else None,
-            "error": {
-                "code": -32603,
-                "message": f"Internal error: {str(e)}"
-            }
-        }
 
 @app.get("/mcp/capabilities")
 async def mcp_capabilities():
@@ -440,10 +444,52 @@ async def mcp_capabilities():
             "resources": {"subscribe": True, "listChanged": True}
         },
         "serverInfo": {
-            "name": "FastAPI MCP Server",
+            "name": "FastAPI MCP Server with Auth",
             "version": "1.0.0"
+        },
+        "authentication": {
+            "required": True,
+            "type": "api-key",
+            "description": "API key authentication via Authorization header"
         }
     }
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint (public)"""
+    return {
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "service": "MCP Server with Authentication",
+        "version": "1.0.0"
+    }
+
+@app.post("/tools/call")
+async def call_tool(
+    request: dict,
+    auth_info: AuthInfo = Depends(require_permission("tools"))
+):
+    """Call a specific MCP tool (authenticated)"""
+    method = request.get("method")
+    params = request.get("params", {})
+    
+    if method != "tools/call":
+        raise HTTPException(status_code=400, detail="Invalid method")
+    
+    tool_name = params.get("name")
+    arguments = params.get("arguments", {})
+    
+    if tool_name not in mcp_server.tools:
+        raise HTTPException(status_code=404, detail=f"Tool '{tool_name}' not found")
+    
+    # Call the MCP server tool handler
+    try:
+        result = await mcp_server.handle_tools_call(params)
+        return result
+            
+    except Exception as e:
+        logger.error(f"Tool execution failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Tool execution failed: {str(e)}")
 
 @app.options("/mcp/stream")
 async def mcp_stream_options():
@@ -451,7 +497,7 @@ async def mcp_stream_options():
     return {
         "status": "ok",
         "methods": ["POST", "OPTIONS"],
-        "headers": ["Content-Type", "Accept"]
+        "headers": ["Content-Type", "Accept", "Authorization"]
     }
 
 if __name__ == "__main__":

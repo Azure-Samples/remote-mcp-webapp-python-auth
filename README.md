@@ -1,28 +1,36 @@
-# FastAPI MCP Server with Weather Tools
+# FastAPI MCP Server with Weather Tools & Authentication
 
-A Model Context Protocol (MCP) server built with FastAPI that provides weather information using the National Weather Service API. Features streamable HTTP transport for real-time communication with MCP Inspector.
+A **production-ready** Model Context Protocol (MCP) server built with FastAPI that provides weather information using the National Weather Service API. Features comprehensive API key authentication, role-based permissions, and streamable HTTP transport for real-time communication.
 
-## 🌐 Live Azure Deployment
+## 🌐 Azure Deployment
 
-**The server is deployed and running live on Azure!**
+- **Azure URL**: https://`APP-SERVICE-NAME`.azurewebsites.net/
+- **API Documentation**: https://`APP-SERVICE-NAME`.azurewebsites.net/docs
+- **Health Check**: https://`APP-SERVICE-NAME`.azurewebsites.net/health
+- **MCP Endpoint**: https://`APP-SERVICE-NAME`.azurewebsites.net/mcp/stream
+- **Tools Endpoint**: https://`APP-SERVICE-NAME`.azurewebsites.net/tools/call
+- **Interactive Test Interface**: [test_azure_web.html](./test_azure_web.html)
 
-- **Azure URL**: https://<APP-SERVICE-NAME>.azurewebsites.net/
-- **API Documentation**: https://<APP-SERVICE-NAME>.azurewebsites.net/docs
-- **Health Check**: https://<APP-SERVICE-NAME>.azurewebsites.net/
-- **MCP Endpoint**: https://<APP-SERVICE-NAME>.azurewebsites.net/mcp/stream
+### 🧪 Live Testing Examples
 
-You can test the weather tools immediately without local setup:
+You can test the authenticated weather tools:
 
 ```bash
-# Test weather alerts for California
-curl -X POST "https://<APP-SERVICE-NAME>.azurewebsites.net/mcp/stream" \
+# Test weather alerts for California (using full access key)
+curl -X POST "https://`APP-SERVICE-NAME`.azurewebsites.net/tools/call" \
+  -H "Authorization: mcp-client-key-123" \
   -H "Content-Type: application/json" \
-  -d '{"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "get_alerts", "arguments": {"state": "CA"}}}'
+  -d '{"method": "tools/call", "params": {"name": "get_alerts", "arguments": {"state": "CA"}}}'
 
-# Test weather forecast for San Francisco
-curl -X POST "https://<APP-SERVICE-NAME>.azurewebsites.net/mcp/stream" \
+# Test weather forecast for San Francisco  
+curl -X POST "https://`APP-SERVICE-NAME`.azurewebsites.net/tools/call" \
+  -H "Authorization: mcp-client-key-123" \
   -H "Content-Type: application/json" \
-  -d '{"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "get_forecast", "arguments": {"latitude": 37.7749, "longitude": -122.4194}}}'
+  -d '{"method": "tools/call", "params": {"name": "get_forecast", "arguments": {"latitude": 37.7749, "longitude": -122.4194}}}'
+
+# Test authentication (should return 401)
+curl -X GET "https://`APP-SERVICE-NAME`.azurewebsites.net/tools" \
+  -H "Authorization: invalid-key"
 ```
 
 ## Features
@@ -37,6 +45,59 @@ curl -X POST "https://<APP-SERVICE-NAME>.azurewebsites.net/mcp/stream" \
 - **Virtual Environment**: Properly isolated Python environment
 - **Auto-reload**: Development server with automatic reloading
 - **National Weather Service API**: Real-time weather data from official US government source
+
+## 🔐 Authentication
+
+This MCP server now includes **API key authentication** for enhanced security. All MCP endpoints (except health checks and documentation) require a valid API key.
+
+### Authentication Methods
+
+1. **Bearer Token Format** (Recommended):
+   ```
+   Authorization: Bearer your-api-key-here
+   ```
+
+2. **Direct API Key Format**:
+   ```
+   Authorization: your-api-key-here
+   ```
+
+### Default API Keys
+
+The server comes with two pre-configured API keys for testing:
+
+- **Full Access**: `mcp-client-key-123` (tools + resources permissions)
+- **Limited Access**: `test-key-456` (tools only)
+
+### Environment Variable Configuration
+
+You can add custom API keys via environment variables:
+
+```powershell
+# Format: "key1:client_name1,key2:client_name2"
+$env:MCP_API_KEYS = "my-key-123:My Client,another-key-456:Another Client"
+```
+
+### Testing Authentication
+
+```bash
+# Test with authentication
+curl -X POST "http://localhost:8000/mcp/stream" \
+  -H "Authorization: Bearer mcp-client-key-123" \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2024-11-05", "capabilities": {}, "clientInfo": {"name": "test", "version": "1.0"}}}'
+
+# Check authentication info
+curl -X GET "http://localhost:8000/auth/info" \
+  -H "Authorization: Bearer mcp-client-key-123"
+```
+
+### Permission System
+
+- **tools**: Access to weather tools (`get_alerts`, `get_forecast`)
+- **resources**: Access to server resources
+
+Clients receive different permissions based on their API key configuration.
 
 ## Prerequisites
 
@@ -79,10 +140,13 @@ Connect directly to the live Azure deployment:
     "weather-mcp-server-azure": {
       "transport": {
         "type": "http",
-        "url": "https://<APP-SERVICE-NAME>.azurewebsites.net/mcp/stream"
+        "url": "https://app-web-7ahzyo2sd4ery.azurewebsites.net/mcp/stream",
+        "headers": {
+          "Authorization": "mcp-client-key-123"
+        }
       },
-      "name": "Weather MCP Server (Azure)",
-      "description": "MCP Server with weather forecast and alerts tools hosted on Azure"
+      "name": "Weather MCP Server (Azure with Auth)",
+      "description": "MCP Server with weather forecast and alerts tools hosted on Azure with authentication"
     }
   }
 }
@@ -96,6 +160,7 @@ Connect directly to the live Azure deployment:
    - Add a new server connection
    - Use HTTP transport type
    - URL: `http://localhost:8000/mcp/stream`
+   - **Add Authentication Header**: `Authorization: mcp-client-key-123`
 
 3. **Configuration file** (`mcp-config.json`):
    ```json
@@ -104,10 +169,13 @@ Connect directly to the live Azure deployment:
        "weather-mcp-server-local": {
          "transport": {
            "type": "http",
-           "url": "http://localhost:8000/mcp/stream"
+           "url": "http://localhost:8000/mcp/stream",
+           "headers": {
+             "Authorization": "mcp-client-key-123"
+           }
          },
-         "name": "Weather MCP Server (Local)",
-         "description": "MCP Server with weather forecast and alerts tools running locally"
+         "name": "Weather MCP Server (Local with Auth)",
+         "description": "MCP Server with weather forecast and alerts tools running locally with authentication"
        }
      }
    }
@@ -115,7 +183,7 @@ Connect directly to the live Azure deployment:
 
 ### Method 3: Web Test Interface
 
-Visit http://localhost:8000/test (local) or https://<APP-SERVICE-NAME>.azurewebsites.net/test (Azure) to use the built-in web interface for testing HTTP connectivity.
+Visit http://localhost:8000/test (local) or https://`APP-SERVICE-NAME`.azurewebsites.net/test (Azure) to use the built-in web interface for testing HTTP connectivity.
 
 ## API Endpoints
 
@@ -227,6 +295,30 @@ Open http://localhost:8000/test in your browser
      - `longitude` (number) - Longitude coordinate
    - **Returns**: 5-day weather forecast with temperature, wind, and detailed conditions
 
+### 🔧 Production Recommendations
+
+1. **API Key Management**:
+   ```bash
+   # Store keys in Azure App Service environment variables
+   az webapp config appsettings set --resource-group myResourceGroup --name myApp --settings MCP_API_KEYS="prod-key-123:Production Client"
+   ```
+
+2. **Monitoring & Logging**:
+   - Enable Azure Application Insights for detailed logging
+   - Set up alerts for 4xx/5xx errors
+   - Monitor `/health` endpoint for uptime
+
+3. **Security Enhancements**:
+   - Rotate API keys regularly
+   - Implement rate limiting for production traffic
+   - Add request/response logging for audit trails
+   - Consider HTTPS certificate pinning for critical clients
+
+4. **Scaling**:
+   - Current deployment handles moderate concurrent users
+   - Can scale horizontally using Azure App Service scaling rules
+   - Consider Azure Front Door for global distribution
+
 ## Weather Data Source
 
 This server uses the **National Weather Service (NWS) API**, which provides:
@@ -241,6 +333,11 @@ This server uses the **National Weather Service (NWS) API**, which provides:
 - **mcp://server/sample**: Sample resource for demonstration
 
 ## Troubleshooting
+
+### Azure Deployment Issues:
+1. **Authentication failures**: Verify API keys in environment variables
+2. **Tool execution errors**: Check Azure App Service logs via `az webapp log tail`
+3. **Connection timeouts**: Ensure Azure App Service is running and not sleeping
 
 ### MCP Inspector Connection Issues:
 1. Ensure the server is running on http://localhost:8000

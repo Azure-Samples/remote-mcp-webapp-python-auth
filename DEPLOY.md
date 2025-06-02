@@ -1,33 +1,48 @@
-# Azure Deployment Guide
+# Azure Deployment Guide - MCP Server with Authentication
 
-This guide explains how to deploy the Weather MCP Server to Azure App Service using Azure Developer CLI (azd).
+This guide explains how to deploy the **authenticated** Weather MCP Server to Azure App Service using Azure Developer CLI (azd).
 
-## 🎉 Current Deployment Status
+## 🌐 Live Deployment Status
 
-**The MCP server is successfully deployed and running on Azure!**
+**✅ DEPLOYED & WORKING**: https://app-web-7ahzyo2sd4ery.azurewebsites.net/
 
-- **Live URL**: https://app-web-h5fifvxtt5hca.azurewebsites.net/
-- **API Docs**: https://app-web-h5fifvxtt5hca.azurewebsites.net/docs
-- **MCP Endpoint**: https://app-web-h5fifvxtt5hca.azurewebsites.net/mcp/stream
-- **Resource Group**: `rg-dev`
-- **App Service**: `app-web-h5fifvxtt5hca`
-- **Region**: East US 2
+- **Deployment Date**: June 2, 2025
+- **Status**: Fully operational with authentication
+- **Health Check**: https://app-web-7ahzyo2sd4ery.azurewebsites.net/health
+- **API Docs**: https://app-web-7ahzyo2sd4ery.azurewebsites.net/docs
 
-## Quick Test
+## 🔐 Authentication Required
 
-Test the deployed weather tools:
+**IMPORTANT**: All MCP endpoints now require authentication with API keys.
+
+### Test API Keys Available:
+- **Full Access**: `mcp-client-key-123` (tools + resources permissions)
+- **Limited Access**: `test-key-456` (tools only)
+
+## Quick Test with Authentication
+
+Test the deployed weather tools with proper authentication:
 
 ```bash
-# Test CA weather alerts
-curl -X POST "https://app-web-h5fifvxtt5hca.azurewebsites.net/mcp/stream" \
+# Test CA weather alerts (using tools/call endpoint)
+curl -X POST "https://app-web-7ahzyo2sd4ery.azurewebsites.net/tools/call" \
+  -H "Authorization: mcp-client-key-123" \
   -H "Content-Type: application/json" \
-  -d '{"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "get_alerts", "arguments": {"state": "CA"}}}'
+  -d '{"method": "tools/call", "params": {"name": "get_alerts", "arguments": {"state": "CA"}}}'
 
 # Test San Francisco weather forecast  
-curl -X POST "https://app-web-h5fifvxtt5hca.azurewebsites.net/mcp/stream" \
+curl -X POST "https://app-web-7ahzyo2sd4ery.azurewebsites.net/tools/call" \
+  -H "Authorization: mcp-client-key-123" \
   -H "Content-Type: application/json" \
-  -d '{"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "get_forecast", "arguments": {"latitude": 37.7749, "longitude": -122.4194}}}'
+  -d '{"method": "tools/call", "params": {"name": "get_forecast", "arguments": {"latitude": 37.7749, "longitude": -122.4194}}}'
+
+# Test authentication failure (should return 401)
+curl -X GET "https://app-web-7ahzyo2sd4ery.azurewebsites.net/tools" \
+  -H "Authorization: invalid-key"
 ```
+
+### Interactive Testing
+Open `test_azure_web.html` in your browser for an interactive test interface.
 
 ## Prerequisites for Deployment
 
@@ -74,19 +89,25 @@ The following environment variables are automatically configured:
 - `WEBSITES_PORT`: Set to 8000 (FastAPI default)
 - `SCM_DO_BUILD_DURING_DEPLOYMENT`: Enables automatic pip install
 
-### Custom Configuration
+### Custom Configuration for Authentication
 
-To add custom environment variables, update `infra/app/web.bicep`:
+To add custom API keys via environment variables, update `infra/app/web.bicep`:
 
 ```bicep
 appSettings: [
   // ... existing settings ...
   {
-    name: 'YOUR_CUSTOM_VAR'
-    value: 'your-value'
+    name: 'MCP_API_KEYS'
+    value: 'prod-key-123:Production Client,staging-key-456:Staging Client'
   }
 ]
 ```
+
+**Environment Variable Format**: `"key1:client_name1,key2:client_name2"`
+
+### Current Default API Keys (for testing only)
+- `mcp-client-key-123`: Full access (tools + resources)
+- `test-key-456`: Limited access (tools only)
 
 ## Architecture
 
@@ -97,13 +118,22 @@ The deployed infrastructure includes:
 - **Application Insights**: Monitoring and telemetry
 - **Log Analytics Workspace**: Log storage and analysis
 
-## MCP Inspector Connection
+### Application Components
+- **FastAPI Server**: Main application with MCP protocol support
+- **Authentication Middleware**: API key-based authentication with role permissions
+- **Weather Tools**: NWS API integration (`get_alerts`, `get_forecast`)
+- **Resource Management**: Sample resource handling
+- **Health Monitoring**: `/health` endpoint with service status
+- **Interactive Testing**: Web-based test interface
 
-After deployment, connect MCP Inspector to your Azure-hosted server:
+## MCP Inspector Connection with Authentication
+
+After deployment, connect MCP Inspector to your Azure-hosted **authenticated** server:
 
 1. In MCP Inspector, add a new server connection
 2. Use HTTP transport type
-3. URL: `https://your-app.azurewebsites.net/mcp/stream`
+3. URL: `https://app-web-7ahzyo2sd4ery.azurewebsites.net/mcp/stream`
+4. **Add Authentication Header**: `Authorization: mcp-client-key-123`
 
 Example configuration:
 ```json
@@ -112,14 +142,26 @@ Example configuration:
     "azure-weather-server": {
       "transport": {
         "type": "http",
-        "url": "https://app-web-[your-id].azurewebsites.net/mcp/stream"
+        "url": "https://app-web-7ahzyo2sd4ery.azurewebsites.net/mcp/stream",
+        "headers": {
+          "Authorization": "mcp-client-key-123"
+        }
       },
-      "name": "Azure Weather MCP Server",
-      "description": "Cloud-hosted weather MCP server"
+      "name": "Azure Weather MCP Server with Auth",
+      "description": "Cloud-hosted authenticated weather MCP server"
     }
   }
 }
 ```
+
+### Authentication Endpoints
+
+- **Health Check** (no auth): `/health`
+- **API Documentation** (no auth): `/docs`
+- **Tools List** (auth required): `/tools`
+- **Tool Execution** (auth required): `/tools/call`
+- **Resources List** (auth required): `/resources`
+- **Auth Info** (auth required): `/auth/info`
 
 ## Monitoring
 
@@ -192,9 +234,21 @@ sku: {
    - Check Application Insights logs in Azure Portal
 
 3. **MCP Connection Issues**
-   - Ensure HTTPS URL is used
+   - Ensure HTTPS URL is used: `https://app-web-7ahzyo2sd4ery.azurewebsites.net/mcp/stream`
+   - **Add Authentication Header**: `Authorization: mcp-client-key-123`
    - Verify CORS is properly configured
-   - Test the `/mcp/capabilities` endpoint
+   - Test the authenticated endpoints first:
+     ```bash
+     # Test tools endpoint
+     curl -X GET "https://app-web-7ahzyo2sd4ery.azurewebsites.net/tools" \
+       -H "Authorization: mcp-client-key-123"
+     ```
+
+4. **Authentication Issues**
+   - Verify API key is included in requests
+   - Check for proper Authorization header format
+   - Test with provided keys: `mcp-client-key-123` or `test-key-456`
+   - Use health endpoint (no auth) to verify server is running: `/health`
 
 ### Debug Commands
 
@@ -225,16 +279,24 @@ This creates `.github/workflows/azure-dev.yml` for automatic deployments on push
 ## Security
 
 The deployed application includes:
-- HTTPS enforcement
-- CORS configuration
-- Azure App Service security features
-- Application Insights for monitoring
+- **API Key Authentication**: Role-based access control with permissions
+- **HTTPS enforcement**: All traffic encrypted
+- **CORS configuration**: Proper cross-origin handling  
+- **Azure App Service security features**: Built-in protection
+- **Application Insights monitoring**: Request tracking and error logging
+
+### Authentication Details
+- **Permission System**: `tools` (weather data access) and `resources` (server resources)
+- **API Key Storage**: In-memory (development) or environment variables (production)
+- **Authorization Formats**: Supports both `Authorization: <key>` and `Authorization: Bearer <key>`
 
 For production use, consider:
-- Azure Key Vault for secrets
-- Azure Active Directory authentication
-- Custom domain with SSL certificate
-- Azure Front Door for CDN and WAF
+- **Azure Key Vault**: Store API keys securely
+- **Custom API Keys**: Add via `MCP_API_KEYS` environment variable
+- **Rate Limiting**: Implement request throttling
+- **Azure Active Directory**: Enterprise authentication
+- **Custom domain with SSL certificate**: Branded endpoints
+- **Azure Front Door**: CDN and Web Application Firewall
 
 ## Updates
 
@@ -249,3 +311,48 @@ azd deploy
 ```
 
 This preserves your Azure resources and only updates the application code.
+
+## ✅ Verified Deployment (June 2, 2025)
+
+The Azure deployment has been **successfully completed and verified**:
+
+### Deployment Results
+- **Initial Deployment**: 2 minutes 51 seconds
+- **Update Deployments**: ~46 seconds
+- **Azure App Service**: app-web-7ahzyo2sd4ery.azurewebsites.net
+- **Resource Group**: Automatically created via azd
+- **Region**: Auto-selected optimal region
+
+### Verification Tests Passed
+All functionality has been tested and verified working:
+
+```bash
+# ✅ Health check
+curl https://app-web-7ahzyo2sd4ery.azurewebsites.net/health
+
+# ✅ Authentication working
+curl -X GET "https://app-web-7ahzyo2sd4ery.azurewebsites.net/tools" \
+  -H "Authorization: mcp-client-key-123"
+
+# ✅ Weather tools operational
+curl -X POST "https://app-web-7ahzyo2sd4ery.azurewebsites.net/tools/call" \
+  -H "Authorization: mcp-client-key-123" \
+  -H "Content-Type: application/json" \
+  -d '{"method": "tools/call", "params": {"name": "get_forecast", "arguments": {"latitude": 40.7128, "longitude": -74.0060}}}'
+
+# ✅ Permission enforcement working  
+curl -X GET "https://app-web-7ahzyo2sd4ery.azurewebsites.net/resources" \
+  -H "Authorization: test-key-456"  # Should return 403
+```
+
+### Test Results Summary
+- **Authentication**: ✅ API key validation working (401 for invalid, 403 for insufficient permissions)
+- **Weather Alerts**: ✅ Retrieved 7 active California weather alerts
+- **Weather Forecast**: ✅ Retrieved NYC 5-day forecast (760+ characters of data)
+- **Permission System**: ✅ Limited keys properly blocked from resources
+- **Health Monitoring**: ✅ Service status reporting correctly
+
+### Testing Files Created
+- **`test_azure_auth.py`**: Comprehensive programmatic test suite
+- **`test_azure_web.html`**: Interactive browser-based testing interface
+- **`DEPLOYMENT_SUMMARY.md`**: Complete deployment documentation

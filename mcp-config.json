@@ -3,18 +3,35 @@
     "weather-mcp-server-local": {
       "transport": {
         "type": "http",
-        "url": "http://localhost:8000/mcp/stream"
+        "url": "http://localhost:8000/mcp/stream",
+        "headers": {
+          "Authorization": "mcp-client-key-123"
+        }
       },
-      "name": "Weather MCP Server (Local)",
-      "description": "MCP Server with weather forecast and alerts tools running locally"
+      "name": "Weather MCP Server (Local with Auth)",
+      "description": "MCP Server with weather forecast and alerts tools running locally with API key authentication"
     },
     "weather-mcp-server-azure": {
       "transport": {
         "type": "http",
-        "url": "https://<APP-SERVICE-NAME>.azurewebsites.net/mcp/stream"
+        "url": "https://app-web-7ahzyo2sd4ery.azurewebsites.net/mcp/stream",
+        "headers": {
+          "Authorization": "mcp-client-key-123"
+        }
       },
-      "name": "Weather MCP Server (Azure)",
-      "description": "MCP Server with weather forecast and alerts tools hosted on Azure"
+      "name": "Weather MCP Server (Azure with Auth)",
+      "description": "MCP Server with weather forecast and alerts tools hosted on Azure with API key authentication"
+    },
+    "weather-mcp-server-azure-limited": {
+      "transport": {
+        "type": "http",
+        "url": "https://app-web-7ahzyo2sd4ery.azurewebsites.net/mcp/stream",
+        "headers": {
+          "Authorization": "test-key-456"
+        }
+      },
+      "name": "Weather MCP Server (Azure Limited Access)",
+      "description": "Azure-hosted MCP server with limited access API key (tools only, no resources)"
     }
   }
 }
