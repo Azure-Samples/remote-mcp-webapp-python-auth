@@ -14,7 +14,7 @@
     "weather-mcp-server-azure": {
       "transport": {
         "type": "http",
-        "url": "https://app-web-7ahzyo2sd4ery.azurewebsites.net/mcp/stream",
+        "url": "https://`<APP-SERVICE-NAME>`.azurewebsites.net/mcp/stream",
         "headers": {
           "Authorization": "mcp-client-key-123"
         }
@@ -25,7 +25,7 @@
     "weather-mcp-server-azure-limited": {
       "transport": {
         "type": "http",
-        "url": "https://app-web-7ahzyo2sd4ery.azurewebsites.net/mcp/stream",
+        "url": "https://`<APP-SERVICE-NAME>`.azurewebsites.net/mcp/stream",
         "headers": {
           "Authorization": "test-key-456"
         }

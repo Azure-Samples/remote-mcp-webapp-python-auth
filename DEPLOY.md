@@ -2,15 +2,6 @@
 
 This guide explains how to deploy the **authenticated** Weather MCP Server to Azure App Service using Azure Developer CLI (azd).
 
-## 🌐 Live Deployment Status
-
-**✅ DEPLOYED & WORKING**: https://app-web-7ahzyo2sd4ery.azurewebsites.net/
-
-- **Deployment Date**: June 2, 2025
-- **Status**: Fully operational with authentication
-- **Health Check**: https://app-web-7ahzyo2sd4ery.azurewebsites.net/health
-- **API Docs**: https://app-web-7ahzyo2sd4ery.azurewebsites.net/docs
-
 ## 🔐 Authentication Required
 
 **IMPORTANT**: All MCP endpoints now require authentication with API keys.
@@ -25,19 +16,19 @@ Test the deployed weather tools with proper authentication:
 
 ```bash
 # Test CA weather alerts (using tools/call endpoint)
-curl -X POST "https://app-web-7ahzyo2sd4ery.azurewebsites.net/tools/call" \
+curl -X POST "https://`APP-SERVICE-NAME`.azurewebsites.net/tools/call" \
   -H "Authorization: mcp-client-key-123" \
   -H "Content-Type: application/json" \
   -d '{"method": "tools/call", "params": {"name": "get_alerts", "arguments": {"state": "CA"}}}'
 
 # Test San Francisco weather forecast  
-curl -X POST "https://app-web-7ahzyo2sd4ery.azurewebsites.net/tools/call" \
+curl -X POST "https://`APP-SERVICE-NAME`.azurewebsites.net/tools/call" \
   -H "Authorization: mcp-client-key-123" \
   -H "Content-Type: application/json" \
   -d '{"method": "tools/call", "params": {"name": "get_forecast", "arguments": {"latitude": 37.7749, "longitude": -122.4194}}}'
 
 # Test authentication failure (should return 401)
-curl -X GET "https://app-web-7ahzyo2sd4ery.azurewebsites.net/tools" \
+curl -X GET "https://`APP-SERVICE-NAME`.azurewebsites.net/tools" \
   -H "Authorization: invalid-key"
 ```
 
@@ -132,7 +123,7 @@ After deployment, connect MCP Inspector to your Azure-hosted **authenticated** s
 
 1. In MCP Inspector, add a new server connection
 2. Use HTTP transport type
-3. URL: `https://app-web-7ahzyo2sd4ery.azurewebsites.net/mcp/stream`
+3. URL: `https://`APP-SERVICE-NAME`.azurewebsites.net/mcp/stream`
 4. **Add Authentication Header**: `Authorization: mcp-client-key-123`
 
 Example configuration:
@@ -142,7 +133,7 @@ Example configuration:
     "azure-weather-server": {
       "transport": {
         "type": "http",
-        "url": "https://app-web-7ahzyo2sd4ery.azurewebsites.net/mcp/stream",
+        "url": "https://`APP-SERVICE-NAME`.azurewebsites.net/mcp/stream",
         "headers": {
           "Authorization": "mcp-client-key-123"
         }
@@ -234,13 +225,13 @@ sku: {
    - Check Application Insights logs in Azure Portal
 
 3. **MCP Connection Issues**
-   - Ensure HTTPS URL is used: `https://app-web-7ahzyo2sd4ery.azurewebsites.net/mcp/stream`
+   - Ensure HTTPS URL is used: `https://`APP-SERVICE-NAME`.azurewebsites.net/mcp/stream`
    - **Add Authentication Header**: `Authorization: mcp-client-key-123`
    - Verify CORS is properly configured
    - Test the authenticated endpoints first:
      ```bash
      # Test tools endpoint
-     curl -X GET "https://app-web-7ahzyo2sd4ery.azurewebsites.net/tools" \
+     curl -X GET "https://`APP-SERVICE-NAME`.azurewebsites.net/tools" \
        -H "Authorization: mcp-client-key-123"
      ```
 
@@ -319,7 +310,7 @@ The Azure deployment has been **successfully completed and verified**:
 ### Deployment Results
 - **Initial Deployment**: 2 minutes 51 seconds
 - **Update Deployments**: ~46 seconds
-- **Azure App Service**: app-web-7ahzyo2sd4ery.azurewebsites.net
+- **Azure App Service**: `APP-SERVICE-NAME`.azurewebsites.net
 - **Resource Group**: Automatically created via azd
 - **Region**: Auto-selected optimal region
 
@@ -328,20 +319,20 @@ All functionality has been tested and verified working:
 
 ```bash
 # ✅ Health check
-curl https://app-web-7ahzyo2sd4ery.azurewebsites.net/health
+curl https://`APP-SERVICE-NAME`.azurewebsites.net/health
 
 # ✅ Authentication working
-curl -X GET "https://app-web-7ahzyo2sd4ery.azurewebsites.net/tools" \
+curl -X GET "https://`APP-SERVICE-NAME`.azurewebsites.net/tools" \
   -H "Authorization: mcp-client-key-123"
 
 # ✅ Weather tools operational
-curl -X POST "https://app-web-7ahzyo2sd4ery.azurewebsites.net/tools/call" \
+curl -X POST "https://`APP-SERVICE-NAME`.azurewebsites.net/tools/call" \
   -H "Authorization: mcp-client-key-123" \
   -H "Content-Type: application/json" \
   -d '{"method": "tools/call", "params": {"name": "get_forecast", "arguments": {"latitude": 40.7128, "longitude": -74.0060}}}'
 
 # ✅ Permission enforcement working  
-curl -X GET "https://app-web-7ahzyo2sd4ery.azurewebsites.net/resources" \
+curl -X GET "https://`APP-SERVICE-NAME`.azurewebsites.net/resources" \
   -H "Authorization: test-key-456"  # Should return 403
 ```
 
