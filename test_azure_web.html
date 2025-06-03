@@ -67,7 +67,7 @@
 <body>
     <div class="container">
         <h1>🔐 MCP Server Authentication Test</h1>
-        <p><strong>Azure Endpoint:</strong> https://app-web-7ahzyo2sd4ery.azurewebsites.net</p>
+        <p><strong>Azure Endpoint:</strong> https://your-app-name.azurewebsites.net (replace with your actual URL)</p>
         
         <div class="test-section info">
             <h3>📋 Available API Keys</h3>
@@ -138,23 +138,23 @@
             <div class="response">
 # Test with full access key
 curl -H "Authorization: Bearer mcp-client-key-123" \
-     https://app-web-7ahzyo2sd4ery.azurewebsites.net/tools
+     https://your-app-name.azurewebsites.net/tools
 
 # Test weather forecast
 curl -X POST \
      -H "Authorization: Bearer mcp-client-key-123" \
      -H "Content-Type: application/json" \
-     -d '{"method":"tools/call","params":{"name":"get_forecast","arguments":{"latitude":40.7128,"longitude":-74.0060}}}' \
-     https://app-web-7ahzyo2sd4ery.azurewebsites.net/tools/call
+     -d '{"method":"tools/call","params":{"name":"get_forecast","arguments":{"latitude":40.7128,"longitude":-74.0060}}}' \     https://your-app-name.azurewebsites.net/tools/call
 
 # Test without authentication (should fail)
-curl https://app-web-7ahzyo2sd4ery.azurewebsites.net/tools
+curl https://your-app-name.azurewebsites.net/tools
             </div>
         </div>
     </div>
 
     <script>
-        const BASE_URL = 'https://app-web-7ahzyo2sd4ery.azurewebsites.net';
+        // Replace with your actual Azure App Service URL after deployment
+        const BASE_URL = 'https://your-app-name.azurewebsites.net';
         
         function getHeaders(requireAuth = false) {
             const headers = {

@@ -4,6 +4,8 @@ A **production-ready** Model Context Protocol (MCP) server built with FastAPI th
 
 ## 🌐 Azure Deployment
 
+> **Note**: Replace `<APP-SERVICE-NAME>` with your actual Azure App Service name after deployment.
+
 - **Azure URL**: https://`<APP-SERVICE-NAME>`.azurewebsites.net/
 - **API Documentation**: https://`<APP-SERVICE-NAME>`.azurewebsites.net/docs
 - **Health Check**: https://`<APP-SERVICE-NAME>`.azurewebsites.net/health
@@ -140,7 +142,7 @@ Connect directly to the live Azure deployment:
     "weather-mcp-server-azure": {
       "transport": {
         "type": "http",
-        "url": "https://app-web-7ahzyo2sd4ery.azurewebsites.net/mcp/stream",
+        "url": "https://your-app-name.azurewebsites.net/mcp/stream",
         "headers": {
           "Authorization": "mcp-client-key-123"
         }

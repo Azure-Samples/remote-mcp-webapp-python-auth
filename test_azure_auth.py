@@ -9,7 +9,8 @@ import sys
 from datetime import datetime
 
 # Azure deployment URL
-BASE_URL = "https://app-web-7ahzyo2sd4ery.azurewebsites.net"
+# Replace with your actual Azure App Service URL after deployment
+BASE_URL = "https://your-app-name.azurewebsites.net"
 
 # Test API keys
 TEST_KEYS = {

@@ -303,14 +303,14 @@ azd deploy
 
 This preserves your Azure resources and only updates the application code.
 
-## ✅ Verified Deployment (June 2, 2025)
+## ✅ Sample Deployment Verification
 
-The Azure deployment has been **successfully completed and verified**:
+The Azure deployment can be **successfully completed and verified**:
 
 ### Deployment Results
 - **Initial Deployment**: 2 minutes 51 seconds
 - **Update Deployments**: ~46 seconds
-- **Azure App Service**: `<APP-SERVICE-NAME>`.azurewebsites.net
+- **Azure App Service**: your-app-name.azurewebsites.net
 - **Resource Group**: Automatically created via azd
 - **Region**: Auto-selected optimal region
 
