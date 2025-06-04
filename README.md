@@ -110,7 +110,7 @@ Connect directly to the live Azure deployment:
         "type": "http",
         "url": "https://your-app-name.azurewebsites.net/mcp/stream",
         "headers": {
-          "Authorization": "mcp-client-key-123"
+          "Authorization": "<YOUR-DEMO-API-KEY>"
         }
       },
       "name": "Weather MCP Server (Azure with Auth)",
@@ -128,7 +128,7 @@ Connect directly to the live Azure deployment:
    - Add a new server connection
    - Use HTTP transport type
    - URL: `http://localhost:8000/mcp/stream`
-   - **Add Authentication Header**: `Authorization: mcp-client-key-123`
+   - **Add Authentication Header**: `Authorization:<YOUR-DEMO-API-KEY>`
 
 3. **Configuration file** (`mcp-config.json`):
    ```json
@@ -139,7 +139,7 @@ Connect directly to the live Azure deployment:
            "type": "http",
            "url": "http://localhost:8000/mcp/stream",
            "headers": {
-             "Authorization": "mcp-client-key-123"
+             "Authorization": "<YOUR-DEMO-API-KEY>"
            }
          },
          "name": "Weather MCP Server (Local with Auth)",

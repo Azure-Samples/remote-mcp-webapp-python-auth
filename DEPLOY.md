@@ -154,25 +154,6 @@ git pull
 azd deploy
 ```
 
-## Scaling Options
-
-### Vertical Scaling
-Update in `infra/core/host/appserviceplan.bicep`:
-```bicep
-sku: {
-  name: 'S1'  // Standard tier for more CPU/memory
-  capacity: 1
-}
-```
-
-### Horizontal Scaling
-```bicep
-sku: {
-  name: 'B1'
-  capacity: 3  // Multiple instances
-}
-```
-
 ## Troubleshooting
 
 ### Common Issues
@@ -357,11 +338,11 @@ curl https://`<APP-SERVICE-NAME>`.azurewebsites.net/health
 
 # ✅ Authentication working
 curl -X GET "https://`<APP-SERVICE-NAME>`.azurewebsites.net/tools" \
-  -H "Authorization: mcp-client-key-123"
+  -H "Authorization:<YOUR-DEMO-API-KEY>"
 
 # ✅ Weather tools operational
 curl -X POST "https://`<APP-SERVICE-NAME>`.azurewebsites.net/tools/call" \
-  -H "Authorization: mcp-client-key-123" \
+  -H "Authorization:<YOUR-DEMO-API-KEY>" \
   -H "Content-Type: application/json" \
   -d '{"method": "tools/call", "params": {"name": "get_forecast", "arguments": {"latitude": 40.7128, "longitude": -74.0060}}}'
 
