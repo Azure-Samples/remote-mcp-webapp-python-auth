@@ -4,6 +4,7 @@ param tags object = {}
 
 param applicationInsightsName string
 param appServicePlanId string
+param mcpApiKeys string = ''
 
 resource applicationInsights 'Microsoft.Insights/components@2020-02-02' existing = {
   name: applicationInsightsName
@@ -37,6 +38,10 @@ resource web 'Microsoft.Web/sites@2022-03-01' = {
         {
           name: 'ENABLE_ORYX_BUILD'
           value: 'true'
+        }
+        {
+          name: 'MCP_API_KEYS'
+          value: mcpApiKeys
         }
       ]
     }

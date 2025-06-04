@@ -7,9 +7,11 @@
     },
     "location": {
       "value": "${AZURE_LOCATION}"
-    },
-    "principalId": {
+    },    "principalId": {
       "value": "${AZURE_PRINCIPAL_ID}"
+    },
+    "mcpApiKeys": {
+      "value": "${MCP_API_KEYS}"
     }
   }
 }

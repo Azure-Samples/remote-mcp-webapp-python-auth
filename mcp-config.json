@@ -5,7 +5,8 @@
         "type": "http",
         "url": "http://localhost:8000/mcp/stream",
         "headers": {
-          "Authorization": "mcp-client-key-123"
+          "Authorization": "<YOUR-DEMO-API-KEY>",
+          "_comment": "PLACEHOLDER API key format - replace <YOUR-DEMO-API-KEY> with your actual secure key"
         }
       },
       "name": "Weather MCP Server (Local with Auth)",
@@ -16,7 +17,8 @@
         "type": "http",
         "url": "https://`<APP-SERVICE-NAME>`.azurewebsites.net/mcp/stream",
         "headers": {
-          "Authorization": "mcp-client-key-123"
+          "Authorization": "<YOUR-DEMO-API-KEY>",
+          "_comment": "PLACEHOLDER API key format - replace <YOUR-DEMO-API-KEY> with your actual secure key"
         }
       },
       "name": "Weather MCP Server (Azure with Auth)",
@@ -27,7 +29,8 @@
         "type": "http",
         "url": "https://`<APP-SERVICE-NAME>`.azurewebsites.net/mcp/stream",
         "headers": {
-          "Authorization": "test-key-456"
+          "Authorization": "<YOUR-LIMITED-API-KEY>",
+          "_comment": "PLACEHOLDER limited API key format - replace <YOUR-LIMITED-API-KEY> with your actual secure key"
         }
       },
       "name": "Weather MCP Server (Azure Limited Access)",

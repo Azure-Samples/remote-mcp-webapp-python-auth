@@ -12,11 +12,11 @@ from datetime import datetime
 # Replace with your actual Azure App Service URL after deployment
 BASE_URL = "https://your-app-name.azurewebsites.net"
 
-# Test API keys
+# Test API keys (PLACEHOLDER FORMAT - replace with your actual keys)
 TEST_KEYS = {
-    "full_access": "mcp-client-key-123",  # Full access (tools + resources)
-    "limited_access": "test-key-456",     # Limited access (tools only)
-    "invalid": "invalid-key-999"          # Invalid key
+    "full_access": "<YOUR-DEMO-API-KEY>",        # Full access (tools + resources) - PLACEHOLDER
+    "limited_access": "<YOUR-LIMITED-API-KEY>",  # Limited access (tools only) - PLACEHOLDER
+    "invalid": "invalid-key-999"                 # Invalid key for testing
 }
 
 def test_endpoint(endpoint, headers=None, method="GET", json_data=None):

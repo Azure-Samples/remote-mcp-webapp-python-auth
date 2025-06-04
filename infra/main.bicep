@@ -19,6 +19,9 @@ param principalId string
 // }
 param resourceGroupName string = ''
 
+@description('MCP API Keys for authentication (format: "key1:name1,key2:name2")')
+param mcpApiKeys string = ''
+
 var abbrs = loadJsonContent('./abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
 var tags = { 'azd-env-name': environmentName }
@@ -40,6 +43,7 @@ module web './app/web.bicep' = {
     tags: tags
     applicationInsightsName: monitoring.outputs.applicationInsightsName
     appServicePlanId: appServicePlan.outputs.id
+    mcpApiKeys: mcpApiKeys
   }
 }
 

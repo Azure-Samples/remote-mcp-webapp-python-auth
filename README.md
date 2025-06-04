@@ -2,111 +2,13 @@
 
 A **production-ready** Model Context Protocol (MCP) server built with FastAPI that provides weather information using the National Weather Service API. Features comprehensive API key authentication, role-based permissions, and streamable HTTP transport for real-time communication.
 
-## 🌐 Azure Deployment
+## 🚀 Quick Start
 
-> **Note**: Replace `<APP-SERVICE-NAME>` with your actual Azure App Service name after deployment.
-
-- **Azure URL**: https://`<APP-SERVICE-NAME>`.azurewebsites.net/
-- **API Documentation**: https://`<APP-SERVICE-NAME>`.azurewebsites.net/docs
-- **Health Check**: https://`<APP-SERVICE-NAME>`.azurewebsites.net/health
-- **MCP Endpoint**: https://`<APP-SERVICE-NAME>`.azurewebsites.net/mcp/stream
-- **Tools Endpoint**: https://`<APP-SERVICE-NAME>`.azurewebsites.net/tools/call
-- **Interactive Test Interface**: [test_azure_web.html](./test_azure_web.html)
-
-### 🧪 Live Testing Examples
-
-You can test the authenticated weather tools:
-
-```bash
-# Test weather alerts for California (using full access key)
-curl -X POST "https://`<APP-SERVICE-NAME>`.azurewebsites.net/tools/call" \
-  -H "Authorization: mcp-client-key-123" \
-  -H "Content-Type: application/json" \
-  -d '{"method": "tools/call", "params": {"name": "get_alerts", "arguments": {"state": "CA"}}}'
-
-# Test weather forecast for San Francisco  
-curl -X POST "https://`<APP-SERVICE-NAME>`.azurewebsites.net/tools/call" \
-  -H "Authorization: mcp-client-key-123" \
-  -H "Content-Type: application/json" \
-  -d '{"method": "tools/call", "params": {"name": "get_forecast", "arguments": {"latitude": 37.7749, "longitude": -122.4194}}}'
-
-# Test authentication (should return 401)
-curl -X GET "https://`<APP-SERVICE-NAME>`.azurewebsites.net/tools" \
-  -H "Authorization: invalid-key"
-```
-
-## Features
-
-- **FastAPI Framework**: Modern, fast web framework for building APIs
-- **MCP Protocol Compliance**: Full support for JSON-RPC 2.0 MCP protocol
-- **Streamable HTTP Transport**: HTTP-based streaming for MCP Inspector connectivity
-- **Weather Tools**: 
-  - `get_alerts`: Get weather alerts for any US state
-  - `get_forecast`: Get 5-day weather forecast for any location (latitude/longitude)
-- **Sample Resources**: Basic resource handling demonstration
-- **Virtual Environment**: Properly isolated Python environment
-- **Auto-reload**: Development server with automatic reloading
-- **National Weather Service API**: Real-time weather data from official US government source
-
-## 🔐 Authentication
-
-This MCP server now includes **API key authentication** for enhanced security. All MCP endpoints (except health checks and documentation) require a valid API key.
-
-### Authentication Methods
-
-1. **Bearer Token Format** (Recommended):
-   ```
-   Authorization: Bearer your-api-key-here
-   ```
-
-2. **Direct API Key Format**:
-   ```
-   Authorization: your-api-key-here
-   ```
-
-### Default API Keys
-
-The server comes with two pre-configured API keys for testing:
-
-- **Full Access**: `mcp-client-key-123` (tools + resources permissions)
-- **Limited Access**: `test-key-456` (tools only)
-
-### Environment Variable Configuration
-
-You can add custom API keys via environment variables:
-
-```powershell
-# Format: "key1:client_name1,key2:client_name2"
-$env:MCP_API_KEYS = "my-key-123:My Client,another-key-456:Another Client"
-```
-
-### Testing Authentication
-
-```bash
-# Test with authentication
-curl -X POST "http://localhost:8000/mcp/stream" \
-  -H "Authorization: Bearer mcp-client-key-123" \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2024-11-05", "capabilities": {}, "clientInfo": {"name": "test", "version": "1.0"}}}'
-
-# Check authentication info
-curl -X GET "http://localhost:8000/auth/info" \
-  -H "Authorization: Bearer mcp-client-key-123"
-```
-
-### Permission System
-
-- **tools**: Access to weather tools (`get_alerts`, `get_forecast`)
-- **resources**: Access to server resources
-
-Clients receive different permissions based on their API key configuration.
-
-## Prerequisites
-
+### Prerequisites
 - Python 3.8+
 - pip (Python package installer)
 
-## Setup
+### Local Development Setup
 
 1. **Create and activate virtual environment:**
    ```powershell
@@ -124,9 +26,73 @@ Clients receive different permissions based on their API key configuration.
    .\start_server.ps1
    ```
    
-   Or manually:
-   ```powershell
-   .\venv\Scripts\python.exe -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+   The server will start at `http://localhost:8000` with placeholder API keys for testing.
+
+### 🌐 Azure Deployment
+
+For production Azure deployment, see **[DEPLOY.md](./DEPLOY.md)** for complete instructions.
+
+- **Live Demo**: https://`<YOUR-APP-SERVICE-NAME>`.azurewebsites.net/
+- **API Documentation**: https://`<YOUR-APP-SERVICE-NAME>`.azurewebsites.net/docs
+- **Interactive Testing**: [test_azure_web.html](./test_azure_web.html)
+
+## Features
+
+- **FastAPI Framework**: Modern, fast web framework for building APIs
+- **MCP Protocol Compliance**: Full support for JSON-RPC 2.0 MCP protocol
+- **Streamable HTTP Transport**: HTTP-based streaming for MCP Inspector connectivity
+- **Weather Tools**: 
+  - `get_alerts`: Get weather alerts for any US state
+  - `get_forecast`: Get 5-day weather forecast for any location (latitude/longitude)
+- **API Key Authentication**: Role-based access control with permissions
+- **Sample Resources**: Basic resource handling demonstration
+- **Auto-reload**: Development server with automatic reloading
+- **National Weather Service API**: Real-time weather data from official US government source
+
+## 🔐 Authentication
+
+This MCP server uses **API key authentication** for security. 
+
+### Local Development (Automatic)
+- Server automatically uses placeholder keys: `<YOUR-DEMO-API-KEY>` and `<YOUR-LIMITED-API-KEY>`
+- These placeholders are visible but **will not work** for actual requests
+- Shows clear warnings in startup logs
+
+### Production Setup
+For production deployment, you must provide real API keys via environment variables:
+
+```powershell
+$env:MCP_API_KEYS = "your-secure-key:Client Name:tools,resources"
+```
+
+**For complete authentication details, see [API_KEY_CONFIGURATION.md](./API_KEY_CONFIGURATION.md)**
+
+### Permission Types
+- **tools**: Access to weather tools (`get_alerts`, `get_forecast`)
+- **resources**: Access to server resources
+
+## Testing the Server
+
+### 1. Basic Health Check
+```bash
+curl http://localhost:8000/health
+```
+
+### 2. List Available Tools
+```bash
+curl -X GET "http://localhost:8000/tools" \
+  -H "Authorization: <YOUR-DEMO-API-KEY>"
+```
+
+### 3. Test Weather Forecast
+```bash
+curl -X POST "http://localhost:8000/tools/call" \
+  -H "Authorization: <YOUR-DEMO-API-KEY>" \
+  -H "Content-Type: application/json" \
+  -d '{"method": "tools/call", "params": {"name": "get_forecast", "arguments": {"latitude": 40.7128, "longitude": -74.0060}}}'
+```
+
+**Note**: These examples use placeholder keys. For actual testing, replace with your own API keys.
    ```
 
 ## Connecting to MCP Inspector
@@ -230,124 +196,102 @@ The server will start on http://localhost:8000
 #### Call Weather Alert Tool
 ```json
 {
-  "jsonrpc": "2.0",
-  "method": "tools/call",
-  "params": {
-    "name": "get_alerts",
-    "arguments": {
-      "state": "CA"
-    }
-  },
-  "id": 3
-}
+  "jsonrpc": "2.0",## MCP Inspector Connection
+
+To connect MCP Inspector to your local server:
+
+1. **Start the server** (it will use placeholder keys automatically)
+2. **In MCP Inspector**, add a new server connection:
+   - **Transport**: HTTP
+   - **URL**: `http://localhost:8000/mcp/stream`
+   - **Headers**: `Authorization: <YOUR-DEMO-API-KEY>`
+
+3. **Connect and test** the weather tools
+
+## Available Endpoints
+
+- **Health Check**: `GET /health` (no auth required)
+- **API Documentation**: `GET /docs` (no auth required)  
+- **Tools List**: `GET /tools` (auth required)
+- **Tool Execution**: `POST /tools/call` (auth required)
+- **MCP Stream**: `POST /mcp/stream` (auth required)
+- **Authentication Info**: `GET /auth/info` (auth required)
+
+## Weather Tools
+
+### `get_alerts`
+Get weather alerts for any US state.
+
+**Parameters:**
+- `state`: Two-letter US state code (e.g., "CA", "TX", "NY")
+
+**Example:**
+```bash
+curl -X POST "http://localhost:8000/tools/call" \
+  -H "Authorization: <YOUR-DEMO-API-KEY>" \
+  -H "Content-Type: application/json" \
+  -d '{"method": "tools/call", "params": {"name": "get_alerts", "arguments": {"state": "CA"}}}'
 ```
 
-#### Call Weather Forecast Tool
-```json
-{
-  "jsonrpc": "2.0",
-  "method": "tools/call",
-  "params": {
-    "name": "get_forecast",
-    "arguments": {
-      "latitude": 37.7749,
-      "longitude": -122.4194
-    }
-  },
-  "id": 4
-}
+### `get_forecast`
+Get 5-day weather forecast for any location.
+
+**Parameters:**
+- `latitude`: Latitude coordinate (number)
+- `longitude`: Longitude coordinate (number)
+
+**Example:**
+```bash
+curl -X POST "http://localhost:8000/tools/call" \
+  -H "Authorization: <YOUR-DEMO-API-KEY>" \
+  -H "Content-Type: application/json" \
+  -d '{"method": "tools/call", "params": {"name": "get_forecast", "arguments": {"latitude": 37.7749, "longitude": -122.4194}}}'
 ```
 
-## Testing
+## Development
 
-### Test with Python client:
-```powershell
-.\venv\Scripts\python.exe test_http_client.py  # Streamable HTTP client
+### File Structure
+```
+├── main.py                 # FastAPI server with MCP implementation
+├── requirements.txt        # Python dependencies
+├── start_server.ps1       # PowerShell startup script
+├── test_azure_auth.py     # Authentication testing script
+├── test_azure_web.html    # Interactive web testing interface
+├── mcp-config.json        # MCP Inspector configuration
+├── DEPLOY.md              # Azure deployment guide
+└── API_KEY_CONFIGURATION.md # Authentication implementation details
 ```
 
-### Test with web interface:
-Open http://localhost:8000/test in your browser
+### Local Development Features
+- **Auto-reload**: Server automatically restarts on code changes
+- **Interactive API docs**: Available at `/docs`
+- **Request logging**: All authenticated requests are logged
+- **Health monitoring**: Status endpoint at `/health`
 
-## Available Tools
+## Production Deployment
 
-1. **get_alerts**: Get weather alerts for a US state
-   ```json
-   {
-     "name": "get_alerts",
-     "arguments": {
-       "state": "CA"
-     }
-   }
-   ```
-   - **Parameter**: `state` (string) - Two-letter US state code (e.g., CA, NY, TX)
-   - **Returns**: Active weather alerts including severity, description, and instructions
-
-2. **get_forecast**: Get weather forecast for a location
-   ```json
-   {
-     "name": "get_forecast", 
-     "arguments": {
-       "latitude": 37.7749,
-       "longitude": -122.4194
-     }
-   }
-   ```
-   - **Parameters**: 
-     - `latitude` (number) - Latitude coordinate
-     - `longitude` (number) - Longitude coordinate
-   - **Returns**: 5-day weather forecast with temperature, wind, and detailed conditions
-
-### 🔧 Production Recommendations
-
-1. **API Key Management**:
-   ```bash
-   # Store keys in Azure App Service environment variables
-   az webapp config appsettings set --resource-group myResourceGroup --name myApp --settings MCP_API_KEYS="prod-key-123:Production Client"
-   ```
-
-2. **Monitoring & Logging**:
-   - Enable Azure Application Insights for detailed logging
-   - Set up alerts for 4xx/5xx errors
-   - Monitor `/health` endpoint for uptime
-
-3. **Security Enhancements**:
-   - Rotate API keys regularly
-   - Implement rate limiting for production traffic
-   - Add request/response logging for audit trails
-   - Consider HTTPS certificate pinning for critical clients
-
-4. **Scaling**:
-   - Current deployment handles moderate concurrent users
-   - Can scale horizontally using Azure App Service scaling rules
-   - Consider Azure Front Door for global distribution
-
-## Weather Data Source
-
-This server uses the **National Weather Service (NWS) API**, which provides:
-- Real-time weather alerts and warnings
-- Detailed weather forecasts
-- Official US government weather data
-- No API key required
-- High reliability and accuracy
-
-## Available Resources
-
-- **mcp://server/sample**: Sample resource for demonstration
+For production Azure deployment:
+1. **Read [DEPLOY.md](./DEPLOY.md)** for complete deployment instructions
+2. **Configure real API keys** via environment variables
+3. **Deploy using Azure Developer CLI**
 
 ## Troubleshooting
 
-### Azure Deployment Issues:
-1. **Authentication failures**: Verify API keys in environment variables
-2. **Tool execution errors**: Check Azure App Service logs via `az webapp log tail`
-3. **Connection timeouts**: Ensure Azure App Service is running and not sleeping
+### Common Issues
 
-### MCP Inspector Connection Issues:
-1. Ensure the server is running on http://localhost:8000
-2. Verify MCP endpoint is accessible: http://localhost:8000/mcp/stream
-3. Check capabilities endpoint: http://localhost:8000/mcp/capabilities
-4. Try the web test interface first: http://localhost:8000/test
+1. **Authentication failures**: Make sure you're using the correct API key format
+2. **CORS errors**: The server is configured for local development and Azure deployment
+3. **Tool execution errors**: Check that the National Weather Service API is accessible
+4. **Environment variable issues**: Restart the server after setting environment variables
 
-### Common Issues:
-- **Port already in use**: Change the port in startup commands
-- **Virtual environment not activated**: Run `.\venv\Scripts\Activate.ps1`
-- **Dependencies missing**: Run `pip install -r requirements.txt`
+### Debug Commands
+```bash
+# Check server health
+curl http://localhost:8000/health
+
+# Test authentication
+curl -X GET "http://localhost:8000/auth/info" -H "Authorization: <YOUR-DEMO-API-KEY>"
+
+# List available tools
+curl -X GET "http://localhost:8000/tools" -H "Authorization: <YOUR-DEMO-API-KEY>"
+```

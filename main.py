@@ -20,32 +20,54 @@ NWS_API_BASE = "https://api.weather.gov"
 USER_AGENT = "weather-app/1.0"
 
 # Authentication Configuration
-# In production, store these in environment variables or a secure config
-VALID_API_KEYS = {
-    "mcp-client-key-123": {
-        "name": "MCP Client",
-        "permissions": ["tools", "resources"],
-        "created": "2024-01-01"
-    },
-    "test-key-456": {
-        "name": "Test Client", 
-        "permissions": ["tools"],
-        "created": "2024-01-01"
-    }
-}
+# SECURITY WARNING: Configure your own API keys via environment variables!
+# The server will not start without proper API key configuration.
 
-# You can also load from environment variable
+VALID_API_KEYS = {}
+
+# Load API keys configuration
+# Priority: Environment variables > Placeholder values (for demo/development)
+
+# 1. First, try loading from environment variables (RECOMMENDED for production)
+# Format: "key1:client_name1:permission1,permission2;key2:client_name2:permission1"
+# Example: "abc123:MyClient:tools,resources;def456:LimitedClient:tools"
 if os.getenv("MCP_API_KEYS"):
-    # Format: "key1:name1,key2:name2"
-    env_keys = os.getenv("MCP_API_KEYS").split(",")
-    for key_pair in env_keys:
-        if ":" in key_pair:
-            key, name = key_pair.split(":", 1)
-            VALID_API_KEYS[key.strip()] = {
-                "name": name.strip(),
-                "permissions": ["tools", "resources"],
-                "created": datetime.now().isoformat()
+    logger.info("🔑 Loading API keys from environment variables")
+    env_keys = os.getenv("MCP_API_KEYS").split(";")
+    for key_config in env_keys:
+        parts = key_config.split(":")
+        if len(parts) >= 3:
+            key = parts[0].strip()
+            name = parts[1].strip()
+            permissions = [p.strip() for p in parts[2].split(",")]
+            VALID_API_KEYS[key] = {
+                "name": name,
+                "permissions": permissions,
+                "created": datetime.now().isoformat(),
+                "source": "environment"
             }
+else:
+    # 2. Fallback to placeholder values for demo/development
+    logger.warning("⚠️  Using placeholder API keys for demo purposes")
+    logger.warning("🔒 For production, set MCP_API_KEYS environment variable")
+    logger.warning("Example: MCP_API_KEYS='your-secure-key-123:My Client:tools,resources'")
+    logger.error("❌ PLACEHOLDER KEYS WILL NOT WORK - Replace <> placeholders with actual keys!")
+    
+    # Placeholder API keys for demo/development - REPLACE WITH YOUR OWN!
+    VALID_API_KEYS = {
+        "<YOUR-DEMO-API-KEY>": {
+            "name": "Demo Client (REPLACE WITH YOUR KEY)",
+            "permissions": ["tools", "resources"],
+            "created": datetime.now().isoformat(),
+            "source": "placeholder"
+        },
+        "<YOUR-LIMITED-API-KEY>": {
+            "name": "Test Client (REPLACE WITH YOUR KEY)", 
+            "permissions": ["tools"],
+            "created": datetime.now().isoformat(),
+            "source": "placeholder"
+        }
+    }
 
 # Pydantic Models
 class Tool(BaseModel):
@@ -383,10 +405,28 @@ mcp_server = MCPServer()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Starting MCP FastAPI Server with Authentication")
-    logger.info(f"Loaded {len(VALID_API_KEYS)} API keys")
+    logger.info("🚀 Starting MCP FastAPI Server with Authentication")
+      # Display API key configuration info
+    if VALID_API_KEYS:
+        env_keys = sum(1 for k in VALID_API_KEYS.values() if k.get("source") == "environment")
+        placeholder_keys = sum(1 for k in VALID_API_KEYS.values() if k.get("source") == "placeholder")
+        
+        logger.info(f"📊 Loaded {len(VALID_API_KEYS)} API keys total:")
+        if env_keys > 0:
+            logger.info(f"   ✅ {env_keys} from environment variables (secure)")
+        if placeholder_keys > 0:
+            logger.warning(f"   ⚠️  {placeholder_keys} placeholder keys (demo only - replace for production!)")
+            logger.error("   ❌ Placeholder keys with <> brackets will not work for actual requests!")
+            
+        # List configured clients (without exposing keys)
+        for key_info in VALID_API_KEYS.values():
+            source_icon = "🔒" if key_info.get("source") == "environment" else "🔧"
+            logger.info(f"   {source_icon} Client: {key_info['name']} | Permissions: {', '.join(key_info['permissions'])}")
+    else:
+        logger.error("❌ No API keys configured - server will reject all requests!")
+    
     yield
-    logger.info("Shutting down MCP FastAPI Server")
+    logger.info("🛑 Shutting down MCP FastAPI Server")
 
 # Create FastAPI app
 app = FastAPI(
@@ -407,8 +447,27 @@ app.add_middleware(
 
 @app.get("/")
 async def root():
-    """Health check endpoint"""
-    return {"message": "MCP FastAPI Server with Authentication is running", "status": "healthy"}
+    """Health check endpoint with configuration info"""
+    # Count API key sources
+    env_keys = sum(1 for k in VALID_API_KEYS.values() if k.get("source") == "environment")
+    placeholder_keys = sum(1 for k in VALID_API_KEYS.values() if k.get("source") == "placeholder")
+    
+    config_status = "production-ready" if env_keys > 0 and placeholder_keys == 0 else "development"
+    if placeholder_keys > 0:
+        config_status = "demo-placeholder-keys"
+    
+    return {
+        "message": "MCP FastAPI Server with Authentication is running", 
+        "status": "healthy",
+        "version": "1.0.0",
+        "api_keys": {
+            "total": len(VALID_API_KEYS),
+            "environment_vars": env_keys,
+            "placeholder_demo": placeholder_keys,
+            "configuration_status": config_status
+        },
+        "security_note": "Replace placeholder API keys for production use" if placeholder_keys > 0 else "Using secure environment variables"
+    }
 
 @app.get("/auth/info")
 async def auth_info(auth: AuthInfo = Depends(authenticate_request)):

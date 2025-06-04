@@ -67,32 +67,30 @@
 <body>
     <div class="container">
         <h1>🔐 MCP Server Authentication Test</h1>
-        <p><strong>Azure Endpoint:</strong> https://your-app-name.azurewebsites.net (replace with your actual URL)</p>
-        
-        <div class="test-section info">
-            <h3>📋 Available API Keys</h3>
+        <p><strong>Azure Endpoint:</strong> https://your-app-name.azurewebsites.net (replace with your actual URL)</p>        <div class="test-section info">
+            <h3>📋 Available API Keys (Placeholder Format)</h3>
             <div class="auth-demo">
                 <div>
-                    <strong>Full Access Key:</strong><br>
-                    <code>mcp-client-key-123</code><br>
-                    <small>Permissions: tools, resources</small>
+                    <strong>Demo Full Access Key:</strong><br>
+                    <code>&lt;YOUR-DEMO-API-KEY&gt;</code><br>
+                    <small>Permissions: tools, resources (PLACEHOLDER - replace with your actual key)</small>
                 </div>
                 <div>
-                    <strong>Limited Access Key:</strong><br>
-                    <code>test-key-456</code><br>
-                    <small>Permissions: tools only</small>
+                    <strong>Test Limited Access Key:</strong><br>
+                    <code>&lt;YOUR-LIMITED-API-KEY&gt;</code><br>
+                    <small>Permissions: tools only (PLACEHOLDER - replace with your actual key)</small>
                 </div>
             </div>
+            <p class="warning">⚠️ <strong>Security Note:</strong> The &lt;&gt; brackets indicate these are placeholder values. Replace with your own secure API keys for actual use.</p>
         </div>
 
         <div class="test-section">
             <h3>🧪 Interactive Testing</h3>
             <div>
-                <label>API Key:</label>
-                <select id="apiKey">
+                <label>API Key:</label>                <select id="apiKey">
                     <option value="">No API Key (should fail)</option>
-                    <option value="mcp-client-key-123">Full Access Key</option>
-                    <option value="test-key-456">Limited Access Key</option>
+                    <option value="<YOUR-DEMO-API-KEY>">Demo Full Access Key (PLACEHOLDER)</option>
+                    <option value="<YOUR-LIMITED-API-KEY>">Test Limited Access Key (PLACEHOLDER)</option>
                     <option value="invalid-key">Invalid Key</option>
                 </select>
             </div>
