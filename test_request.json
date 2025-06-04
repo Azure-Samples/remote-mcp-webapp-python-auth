@@ -1,0 +1,9 @@
+{
+  "method": "tools/call",
+  "params": {
+    "name": "get_alerts",
+    "arguments": {
+      "state": "CA"
+    }
+  }
+}
