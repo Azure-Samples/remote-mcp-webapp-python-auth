@@ -216,9 +216,6 @@ For production deployments, consider:
 - Custom domains with SSL certificates
 - Azure Front Door for global distribution
 - Rate limiting and request throttling
-  capacity: 3  // Multiple instances
-}
-```
 
 ## Cost Optimization
 

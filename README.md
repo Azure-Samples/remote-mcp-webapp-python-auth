@@ -193,10 +193,7 @@ The server will start on http://localhost:8000
 }
 ```
 
-#### Call Weather Alert Tool
-```json
-{
-  "jsonrpc": "2.0",## MCP Inspector Connection
+## MCP Inspector Connection
 
 To connect MCP Inspector to your local server:
 
